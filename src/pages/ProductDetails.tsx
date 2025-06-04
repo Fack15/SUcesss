@@ -1,12 +1,13 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Loader2, ArrowLeft, Edit, Trash2, Copy, Download, ExternalLink } from 'lucide-react';
 import Navigation from '../components/Navigation';
-import { mockProducts } from '../data/mockData';
-import { ArrowLeft, Edit, Trash2, Copy, QrCode, ExternalLink, Download } from 'lucide-react';
+import { useProduct, useDeleteProduct } from '../hooks/useProducts';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductDetails: React.FC = () => {
@@ -14,9 +15,24 @@ const ProductDetails: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const product = mockProducts.find(p => p.id === id);
+  const { data: product, isLoading, error } = useProduct(id || '');
+  const deleteProductMutation = useDeleteProduct();
 
-  if (!product) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading product...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
@@ -36,37 +52,30 @@ const ProductDetails: React.FC = () => {
     navigate(`/products/edit/${id}`);
   };
 
-  const handleDelete = () => {
-    toast({
-      title: "Product deleted",
-      description: "Product has been successfully deleted.",
-    });
-    navigate('/products');
+  const handleDelete = async () => {
+    try {
+      await deleteProductMutation.mutateAsync(id!);
+      toast({
+        title: "Product deleted",
+        description: "Product has been successfully deleted.",
+      });
+      navigate('/products');
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message || "Failed to delete product.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDuplicate = () => {
-    toast({
-      title: "Product duplicated",
-      description: "Product has been successfully duplicated.",
-    });
-  };
-
-  const handleDeleteImage = () => {
-    toast({
-      title: "Image deleted",
-      description: "Product image has been successfully deleted.",
-    });
-  };
-
-  const handleChangeImage = () => {
-    toast({
-      title: "Change image",
-      description: "Image change functionality will be implemented.",
-    });
+    navigate('/products/create', { state: { duplicateFrom: product } });
   };
 
   const handleDownloadQR = async () => {
     try {
+      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(labelPublicLink)}`;
       const response = await fetch(qrCodeUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -91,8 +100,7 @@ const ProductDetails: React.FC = () => {
     }
   };
 
-  // Generate QR code URL (using a QR code service)
-  const labelPublicLink = `http://localhost:5206/l/${product.id}`;
+  const labelPublicLink = `${window.location.origin}/l/${product.id}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(labelPublicLink)}`;
 
   return (
@@ -119,23 +127,6 @@ const ProductDetails: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Product Image */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Product Image</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center space-y-4">
-                  <div className="w-full max-w-md bg-gray-100 rounded-lg flex items-center justify-center h-64">
-                    <span className="text-gray-500">Product Image Placeholder</span>
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    Image Dimensions: 125×64, 250×129, 500×258, 1000×517, 1500×775, 2000×1034
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Product Information */}
             <Card>
               <CardHeader>
@@ -151,124 +142,89 @@ const ProductDetails: React.FC = () => {
                   <p className="text-gray-900">{product.brand}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Net Volume:</span>
-                  <p className="text-gray-900">{product.netVolume}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Vintage:</span>
-                  <p className="text-gray-900">{product.vintage}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Type:</span>
-                  <p className="text-gray-900">{product.type}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Sugar Content:</span>
-                  <p className="text-gray-900">{product.sugarContent}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Appellation:</span>
-                  <p className="text-gray-900">{product.appellation}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Alcohol Content:</span>
-                  <p className="text-gray-900">{product.alcohol}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Country:</span>
-                  <p className="text-gray-900">{product.country}</p>
-                </div>
-                <div>
                   <span className="font-medium text-gray-700">SKU:</span>
                   <p className="text-gray-900">{product.sku}</p>
                 </div>
-                <div className="md:col-span-2">
-                  <span className="font-medium text-gray-700">EAN:</span>
-                  <p className="text-gray-900">{product.ean}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Ingredients */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ingredients</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">
-                  Grapes, sulfur dioxide (E220), potassium sorbate (E202). Contains sulfites.
-                </p>
-                <div className="mt-4">
-                  <span className="font-medium text-gray-700">Packaging Gases:</span>
-                  <p className="text-gray-900">Nitrogen, Carbon dioxide</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Nutrition Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Nutrition Information</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <span className="font-medium text-gray-700">Portion Size:</span>
-                  <p className="text-gray-900">100ml</p>
+                  <span className="font-medium text-gray-700">Net Volume:</span>
+                  <p className="text-gray-900">{product.net_volume || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">kcal:</span>
-                  <p className="text-gray-900">83</p>
+                  <span className="font-medium text-gray-700">Vintage:</span>
+                  <p className="text-gray-900">{product.vintage || 'N/A'}</p>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-700">kJ:</span>
-                  <p className="text-gray-900">347</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Fat:</span>
-                  <p className="text-gray-900">0g</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Carbohydrates:</span>
-                  <p className="text-gray-900">2.6g</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Certifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Certifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="secondary">Organic</Badge>
-                  <Badge variant="secondary">Vegetarian</Badge>
-                  <Badge variant="secondary">Vegan</Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Food Business Operator */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Food Business Operator</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
                 <div>
                   <span className="font-medium text-gray-700">Type:</span>
-                  <p className="text-gray-900">Producer</p>
+                  <p className="text-gray-900">{product.type || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Name:</span>
-                  <p className="text-gray-900">Château Example</p>
+                  <span className="font-medium text-gray-700">Sugar Content:</span>
+                  <p className="text-gray-900">{product.sugar_content || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Address:</span>
-                  <p className="text-gray-900">123 Vineyard Road, Bordeaux, France</p>
+                  <span className="font-medium text-gray-700">Appellation:</span>
+                  <p className="text-gray-900">{product.appellation || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Additional Information:</span>
-                  <p className="text-gray-900">Family-owned winery established in 1850</p>
+                  <span className="font-medium text-gray-700">Alcohol Content:</span>
+                  <p className="text-gray-900">{product.alcohol_content ? `${product.alcohol_content}%` : 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Country:</span>
+                  <p className="text-gray-900">{product.country_of_origin || 'N/A'}</p>
+                </div>
+                {product.description && (
+                  <div className="md:col-span-2">
+                    <span className="font-medium text-gray-700">Description:</span>
+                    <p className="text-gray-900">{product.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Producer Information */}
+            {(product.producer_name || product.producer_address) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Producer Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {product.producer_name && (
+                    <div>
+                      <span className="font-medium text-gray-700">Producer Name:</span>
+                      <p className="text-gray-900">{product.producer_name}</p>
+                    </div>
+                  )}
+                  {product.producer_address && (
+                    <div>
+                      <span className="font-medium text-gray-700">Producer Address:</span>
+                      <p className="text-gray-900">{product.producer_address}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Barcode Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Identification</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <span className="font-medium text-gray-700">Product ID:</span>
+                    <p className="text-gray-900 font-mono">{product.id}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-700">SKU Barcode:</span>
+                    <div className="mt-2 p-4 bg-gray-50 rounded-lg">
+                      <div className="font-mono text-lg tracking-wider bg-white p-2 text-center border">
+                        {product.sku}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-2">This SKU can be used to generate various barcode formats</p>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -309,31 +265,11 @@ const ProductDetails: React.FC = () => {
                       <code className="bg-gray-100 px-2 py-1 rounded text-sm flex-1 truncate">
                         {labelPublicLink}
                       </code>
-                      <Button size="sm" variant="outline">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-gray-700">External Short Link:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm flex-1">
-                        https://short.ly/abc123
-                      </code>
-                      <Button size="sm" variant="outline">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <span className="font-medium text-gray-700">Redirect Link:</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm flex-1">
-                        https://redirect.com/wine123
-                      </code>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => window.open(labelPublicLink, '_blank')}
+                      >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </div>
@@ -350,19 +286,11 @@ const ProductDetails: React.FC = () => {
               <CardContent className="space-y-3">
                 <div>
                   <span className="font-medium text-gray-700">Created on:</span>
-                  <p className="text-gray-900">5/31/2025 1:01:41 AM</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Created by:</span>
-                  <p className="text-gray-900">Admin</p>
+                  <p className="text-gray-900">{new Date(product.created_at).toLocaleString()}</p>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Updated on:</span>
-                  <p className="text-gray-900">5/31/2025 1:02:10 AM</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Updated by:</span>
-                  <p className="text-gray-900">Admin</p>
+                  <p className="text-gray-900">{new Date(product.updated_at).toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>
@@ -377,21 +305,22 @@ const ProductDetails: React.FC = () => {
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </Button>
-                <Button onClick={handleDeleteImage} variant="outline" className="w-full justify-start">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Image
-                </Button>
-                <Button onClick={handleChangeImage} variant="outline" className="w-full justify-start">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Change Image
-                </Button>
                 <Button onClick={handleDuplicate} variant="outline" className="w-full justify-start">
                   <Copy className="h-4 w-4 mr-2" />
                   Duplicate
                 </Button>
                 <Separator />
-                <Button onClick={handleDelete} variant="destructive" className="w-full justify-start">
-                  <Trash2 className="h-4 w-4 mr-2" />
+                <Button 
+                  onClick={handleDelete} 
+                  variant="destructive" 
+                  className="w-full justify-start"
+                  disabled={deleteProductMutation.isPending}
+                >
+                  {deleteProductMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4 mr-2" />
+                  )}
                   Delete
                 </Button>
               </CardContent>
