@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Wine } from 'lucide-react';
+import { LogOut, Package } from 'lucide-react';
 
 const Navigation: React.FC = () => {
   const { logout, user } = useAuth();
@@ -20,8 +20,8 @@ const Navigation: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/products" className="flex items-center space-x-2">
-              <Wine className="h-8 w-8 text-purple-600" />
-              <span className="text-xl font-bold text-gray-900">WineManager</span>
+              <Package className="h-8 w-8 text-purple-600" />
+              <span className="text-xl font-bold text-gray-900">Elable</span>
             </Link>
           </div>
           

@@ -1,11 +1,13 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Navigation from '../components/Navigation';
 import { mockIngredients, Ingredient } from '../data/mockData';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Download, Upload, MoreHorizontal, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const IngredientList: React.FC = () => {
@@ -36,6 +38,34 @@ const IngredientList: React.FC = () => {
     navigate(`/ingredients/details/${id}`);
   };
 
+  const handleDuplicate = (ingredient: Ingredient) => {
+    const newIngredient = {
+      ...ingredient,
+      id: Date.now().toString(),
+      name: `${ingredient.name} (Copy)`,
+      eNumber: ingredient.eNumber ? `${ingredient.eNumber}-COPY` : ''
+    };
+    setIngredients([...ingredients, newIngredient]);
+    toast({
+      title: "Ingredient duplicated",
+      description: "Ingredient has been successfully duplicated.",
+    });
+  };
+
+  const handleImport = () => {
+    toast({
+      title: "Import",
+      description: "Import functionality will be implemented with backend.",
+    });
+  };
+
+  const handleExport = () => {
+    toast({
+      title: "Export",
+      description: "Export functionality will be implemented with backend.",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -49,13 +79,23 @@ const IngredientList: React.FC = () => {
         <div className="bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <Button 
-                onClick={() => navigate('/ingredients/create')}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create New
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => navigate('/ingredients/create')}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New
+                </Button>
+                <Button variant="outline" onClick={handleImport}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import
+                </Button>
+                <Button variant="outline" onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </div>
               
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -109,23 +149,30 @@ const IngredientList: React.FC = () => {
                           size="sm"
                           onClick={() => handleEdit(ingredient.id)}
                         >
-                          Edit
+                          ✏️
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDetails(ingredient.id)}
-                        >
-                          Details
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDelete(ingredient.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Delete
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleDetails(ingredient.id)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEdit(ingredient.id)}>
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(ingredient.id)}>
+                              Delete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDuplicate(ingredient)}>
+                              Duplicate
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
