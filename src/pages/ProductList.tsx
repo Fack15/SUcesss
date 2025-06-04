@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,17 +7,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Navigation from '../components/Navigation';
 import ProductPreviewDialog from '../components/ProductPreviewDialog';
-import { mockProducts, Product } from '../data/mockData';
-import { Plus, Search, Download, Upload, MoreHorizontal, Eye, FileText } from 'lucide-react';
+import { Plus, Search, Download, Upload, MoreHorizontal, Eye, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useProducts, useDeleteProduct } from '../hooks/useProducts';
 
 const ProductList: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
   const [searchTerm, setSearchTerm] = useState('');
-  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<any | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: products = [], isLoading, error } = useProducts();
+  const deleteProductMutation = useDeleteProduct();
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -32,31 +35,30 @@ const ProductList: React.FC = () => {
     navigate(`/products/details/${id}`);
   };
 
-  const handlePreview = (product: Product) => {
+  const handlePreview = (product: any) => {
     setPreviewProduct(product);
     setPreviewOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    toast({
-      title: "Product deleted",
-      description: "Product has been successfully deleted.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteProductMutation.mutateAsync(id);
+      toast({
+        title: "Product deleted",
+        description: "Product has been successfully deleted.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete product.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDuplicate = (product: Product) => {
-    const newProduct = {
-      ...product,
-      id: Date.now().toString(),
-      name: `${product.name} (Copy)`,
-      sku: `${product.sku}-COPY`
-    };
-    setProducts([...products, newProduct]);
-    toast({
-      title: "Product duplicated",
-      description: "Product has been successfully duplicated.",
-    });
+  const handleDuplicate = (product: any) => {
+    // For now, navigate to create with prefilled data
+    navigate('/products/create', { state: { duplicateFrom: product } });
   };
 
   const handleImport = () => {
@@ -72,6 +74,19 @@ const ProductList: React.FC = () => {
       description: "Export functionality will be implemented with backend.",
     });
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-red-600">Error loading products: {error.message}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,76 +132,94 @@ const ProductList: React.FC = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Net Volume</TableHead>
-                  <TableHead>Vintage</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Sugar Content</TableHead>
-                  <TableHead>Appellation</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => (
-                  <TableRow key={product.id} className="hover:bg-gray-50">
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{product.netVolume}</TableCell>
-                    <TableCell>{product.vintage}</TableCell>
-                    <TableCell>{product.type}</TableCell>
-                    <TableCell>{product.sugarContent}</TableCell>
-                    <TableCell>{product.appellation}</TableCell>
-                    <TableCell>{product.sku}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(product.id)}
-                        >
-                          ✏️
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePreview(product)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleDetails(product.id)}>
-                              <FileText className="h-4 w-4 mr-2" />
-                              Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEdit(product.id)}>
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(product.id)}>
-                              Delete
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDuplicate(product)}>
-                              Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePreview(product)}>
-                              Preview
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <span className="ml-2">Loading products...</span>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Net Volume</TableHead>
+                    <TableHead>Vintage</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Sugar Content</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        {searchTerm ? 'No products found matching your search.' : 'No products yet. Create your first product!'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredProducts.map((product) => (
+                      <TableRow key={product.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>{product.brand}</TableCell>
+                        <TableCell>{product.net_volume || '-'}</TableCell>
+                        <TableCell>{product.vintage || '-'}</TableCell>
+                        <TableCell>{product.type || '-'}</TableCell>
+                        <TableCell>{product.sugar_content || '-'}</TableCell>
+                        <TableCell>{product.sku}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(product.id)}
+                            >
+                              ✏️
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePreview(product)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleDetails(product.id)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Details
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEdit(product.id)}>
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDelete(product.id)}
+                                  disabled={deleteProductMutation.isPending}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDuplicate(product)}>
+                                  Duplicate
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handlePreview(product)}>
+                                  Preview
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
       </div>

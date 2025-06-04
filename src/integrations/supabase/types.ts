@@ -9,7 +9,165 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ingredients: {
+        Row: {
+          allergens: string[] | null
+          category: string
+          created_at: string | null
+          description: string | null
+          e_number: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          allergens?: string[] | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          e_number?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          allergens?: string[] | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          e_number?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      product_ingredients: {
+        Row: {
+          created_at: string | null
+          id: string
+          ingredient_id: string
+          product_id: string
+          quantity: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ingredient_id: string
+          product_id: string
+          quantity?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ingredient_id?: string
+          product_id?: string
+          quantity?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ingredients_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_ingredients_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          alcohol_content: number | null
+          appellation: string | null
+          brand: string
+          country_of_origin: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          net_volume: string | null
+          producer_address: string | null
+          producer_name: string | null
+          sku: string
+          sugar_content: string | null
+          type: string | null
+          updated_at: string | null
+          user_id: string
+          vintage: string | null
+        }
+        Insert: {
+          alcohol_content?: number | null
+          appellation?: string | null
+          brand: string
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          net_volume?: string | null
+          producer_address?: string | null
+          producer_name?: string | null
+          sku: string
+          sugar_content?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id: string
+          vintage?: string | null
+        }
+        Update: {
+          alcohol_content?: number | null
+          appellation?: string | null
+          brand?: string
+          country_of_origin?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          net_volume?: string | null
+          producer_address?: string | null
+          producer_name?: string | null
+          sku?: string
+          sugar_content?: string | null
+          type?: string | null
+          updated_at?: string | null
+          user_id?: string
+          vintage?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

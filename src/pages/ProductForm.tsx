@@ -1,54 +1,81 @@
 
-import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 import Navigation from '../components/Navigation';
-import { mockProducts } from '../data/mockData';
 import { useToast } from '@/hooks/use-toast';
+import { useProduct, useCreateProduct, useUpdateProduct } from '../hooks/useProducts';
 
 const ProductForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const isEdit = !!id;
   
-  const existingProduct = isEdit ? mockProducts.find(p => p.id === id) : null;
+  const { data: existingProduct, isLoading } = useProduct(id || '');
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+  
+  const duplicateFrom = location.state?.duplicateFrom;
   
   const [formData, setFormData] = useState({
-    name: existingProduct?.name || '',
-    brand: existingProduct?.brand || '',
-    netVolume: existingProduct?.netVolume || '',
-    vintage: existingProduct?.vintage || '',
-    type: existingProduct?.type || '',
-    sugarContent: existingProduct?.sugarContent || '',
-    appellation: existingProduct?.appellation || '',
-    alcohol: existingProduct?.alcohol || '',
-    country: existingProduct?.country || '',
-    sku: existingProduct?.sku || '',
-    ean: existingProduct?.ean || '',
-    // Additional fields
-    packagingGases: '',
-    portion: '',
-    kcal: '',
-    kj: '',
-    fat: '',
-    carbs: '',
-    organic: false,
-    vegetarian: false,
-    vegan: false,
-    operatorType: '',
-    operatorName: '',
-    operatorAddress: '',
-    operatorAdditionalInfo: '',
-    externalLink: '',
-    redirectLink: ''
+    name: '',
+    brand: '',
+    sku: '',
+    net_volume: '',
+    vintage: '',
+    type: '',
+    sugar_content: '',
+    appellation: '',
+    alcohol_content: '',
+    description: '',
+    producer_name: '',
+    producer_address: '',
+    country_of_origin: '',
   });
+
+  useEffect(() => {
+    if (existingProduct) {
+      setFormData({
+        name: existingProduct.name || '',
+        brand: existingProduct.brand || '',
+        sku: existingProduct.sku || '',
+        net_volume: existingProduct.net_volume || '',
+        vintage: existingProduct.vintage || '',
+        type: existingProduct.type || '',
+        sugar_content: existingProduct.sugar_content || '',
+        appellation: existingProduct.appellation || '',
+        alcohol_content: existingProduct.alcohol_content?.toString() || '',
+        description: existingProduct.description || '',
+        producer_name: existingProduct.producer_name || '',
+        producer_address: existingProduct.producer_address || '',
+        country_of_origin: existingProduct.country_of_origin || '',
+      });
+    } else if (duplicateFrom) {
+      setFormData({
+        name: `${duplicateFrom.name} (Copy)`,
+        brand: duplicateFrom.brand || '',
+        sku: `${duplicateFrom.sku}-COPY`,
+        net_volume: duplicateFrom.net_volume || '',
+        vintage: duplicateFrom.vintage || '',
+        type: duplicateFrom.type || '',
+        sugar_content: duplicateFrom.sugar_content || '',
+        appellation: duplicateFrom.appellation || '',
+        alcohol_content: duplicateFrom.alcohol_content?.toString() || '',
+        description: duplicateFrom.description || '',
+        producer_name: duplicateFrom.producer_name || '',
+        producer_address: duplicateFrom.producer_address || '',
+        country_of_origin: duplicateFrom.country_of_origin || '',
+      });
+    }
+  }, [existingProduct, duplicateFrom]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -59,21 +86,52 @@ const ProductForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [name]: checked }));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const productData = {
+        ...formData,
+        alcohol_content: formData.alcohol_content ? parseFloat(formData.alcohol_content) : null,
+      };
+
+      if (isEdit && id) {
+        await updateProductMutation.mutateAsync({ id, ...productData });
+        toast({
+          title: "Product updated",
+          description: `Product ${formData.name} has been successfully updated.`,
+        });
+      } else {
+        await createProductMutation.mutateAsync(productData);
+        toast({
+          title: "Product created",
+          description: `Product ${formData.name} has been successfully created.`,
+        });
+      }
+      
+      navigate('/products');
+    } catch (error: any) {
+      toast({
+        title: isEdit ? "Update failed" : "Creation failed",
+        description: error.message || "An error occurred while saving the product.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form data:', formData);
-    
-    toast({
-      title: isEdit ? "Product updated" : "Product created",
-      description: `Product ${formData.name} has been successfully ${isEdit ? 'updated' : 'created'}.`,
-    });
-    
-    navigate('/products');
-  };
+  if (isEdit && isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <span className="ml-2">Loading product...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,14 +175,23 @@ const ProductForm: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="netVolume">Net Volume</Label>
+                <Label htmlFor="sku">SKU</Label>
                 <Input
-                  id="netVolume"
-                  name="netVolume"
-                  value={formData.netVolume}
+                  id="sku"
+                  name="sku"
+                  value={formData.sku}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="net_volume">Net Volume</Label>
+                <Input
+                  id="net_volume"
+                  name="net_volume"
+                  value={formData.net_volume}
                   onChange={handleInputChange}
                   placeholder="e.g., 750ml"
-                  required
                 />
               </div>
             </CardContent>
@@ -163,8 +230,8 @@ const ProductForm: React.FC = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sugarContent">Sugar Content</Label>
-                <Select onValueChange={(value) => handleSelectChange('sugarContent', value)} value={formData.sugarContent}>
+                <Label htmlFor="sugar_content">Sugar Content</Label>
+                <Select onValueChange={(value) => handleSelectChange('sugar_content', value)} value={formData.sugar_content}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select sugar content" />
                   </SelectTrigger>
@@ -189,249 +256,76 @@ const ProductForm: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="alcohol">Alcohol Content</Label>
+                <Label htmlFor="alcohol_content">Alcohol Content (%)</Label>
                 <Input
-                  id="alcohol"
-                  name="alcohol"
-                  value={formData.alcohol}
+                  id="alcohol_content"
+                  name="alcohol_content"
+                  type="number"
+                  step="0.1"
+                  value={formData.alcohol_content}
                   onChange={handleInputChange}
-                  placeholder="e.g., 13.5%"
+                  placeholder="e.g., 13.5"
                 />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Ingredients */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Ingredients</CardTitle>
-            </CardHeader>
-            <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="packagingGases">Packaging Gases</Label>
-                <Textarea
-                  id="packagingGases"
-                  name="packagingGases"
-                  value={formData.packagingGases}
-                  onChange={handleInputChange}
-                  placeholder="List packaging gases used..."
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Nutrition Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Nutrition Information</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="portion">Portion Size</Label>
+                <Label htmlFor="country_of_origin">Country of Origin</Label>
                 <Input
-                  id="portion"
-                  name="portion"
-                  value={formData.portion}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 100ml"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="kcal">kcal</Label>
-                <Input
-                  id="kcal"
-                  name="kcal"
-                  value={formData.kcal}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 83"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="kj">kJ</Label>
-                <Input
-                  id="kj"
-                  name="kj"
-                  value={formData.kj}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 347"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="fat">Fat (g)</Label>
-                <Input
-                  id="fat"
-                  name="fat"
-                  value={formData.fat}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 0"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="carbs">Carbohydrates (g)</Label>
-                <Input
-                  id="carbs"
-                  name="carbs"
-                  value={formData.carbs}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 2.6"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Certifications */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Certifications</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="organic"
-                  checked={formData.organic}
-                  onCheckedChange={(checked) => handleCheckboxChange('organic', checked as boolean)}
-                />
-                <Label htmlFor="organic">Organic</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="vegetarian"
-                  checked={formData.vegetarian}
-                  onCheckedChange={(checked) => handleCheckboxChange('vegetarian', checked as boolean)}
-                />
-                <Label htmlFor="vegetarian">Vegetarian</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="vegan"
-                  checked={formData.vegan}
-                  onCheckedChange={(checked) => handleCheckboxChange('vegan', checked as boolean)}
-                />
-                <Label htmlFor="vegan">Vegan</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Food Business Operator */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Food Business Operator</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="operatorType">Type</Label>
-                <Select onValueChange={(value) => handleSelectChange('operatorType', value)} value={formData.operatorType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select operator type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Producer">Producer</SelectItem>
-                    <SelectItem value="Distributor">Distributor</SelectItem>
-                    <SelectItem value="Importer">Importer</SelectItem>
-                    <SelectItem value="Retailer">Retailer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="operatorName">Name</Label>
-                <Input
-                  id="operatorName"
-                  name="operatorName"
-                  value={formData.operatorName}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="operatorAddress">Address</Label>
-                <Textarea
-                  id="operatorAddress"
-                  name="operatorAddress"
-                  value={formData.operatorAddress}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="operatorAdditionalInfo">Additional Information</Label>
-                <Textarea
-                  id="operatorAdditionalInfo"
-                  name="operatorAdditionalInfo"
-                  value={formData.operatorAdditionalInfo}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Logistics */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Logistics</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="country">Country of Origin</Label>
-                <Input
-                  id="country"
-                  name="country"
-                  value={formData.country}
+                  id="country_of_origin"
+                  name="country_of_origin"
+                  value={formData.country_of_origin}
                   onChange={handleInputChange}
                   placeholder="e.g., France"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU</Label>
-                <Input
-                  id="sku"
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ean">EAN</Label>
-                <Input
-                  id="ean"
-                  name="ean"
-                  value={formData.ean}
-                  onChange={handleInputChange}
-                  placeholder="13-digit EAN code"
-                />
-              </div>
             </CardContent>
           </Card>
 
-          {/* Portability */}
+          {/* Producer Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Portability</CardTitle>
+              <CardTitle>Producer Information</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="externalLink">External Short Link</Label>
+                <Label htmlFor="producer_name">Producer Name</Label>
                 <Input
-                  id="externalLink"
-                  name="externalLink"
-                  value={formData.externalLink}
+                  id="producer_name"
+                  name="producer_name"
+                  value={formData.producer_name}
                   onChange={handleInputChange}
-                  placeholder="https://short.link/product"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="redirectLink">Redirect Link</Label>
-                <Input
-                  id="redirectLink"
-                  name="redirectLink"
-                  value={formData.redirectLink}
+                <Label htmlFor="producer_address">Producer Address</Label>
+                <Textarea
+                  id="producer_address"
+                  name="producer_address"
+                  value={formData.producer_address}
                   onChange={handleInputChange}
-                  placeholder="https://redirect.link/product"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Product description..."
                 />
               </div>
             </CardContent>
           </Card>
 
           <div className="flex gap-4">
-            <Button type="submit" className="bg-purple-600 hover:bg-purple-700">
+            <Button 
+              type="submit" 
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={createProductMutation.isPending || updateProductMutation.isPending}
+            >
+              {(createProductMutation.isPending || updateProductMutation.isPending) && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {isEdit ? 'Update Product' : 'Create Product'}
             </Button>
             <Button type="button" variant="outline" onClick={() => navigate('/products')}>
