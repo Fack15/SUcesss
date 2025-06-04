@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Navigation from '../components/Navigation';
 import { mockProducts } from '../data/mockData';
-import { ArrowLeft, Edit, Trash2, Copy, QrCode, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, Copy, QrCode, ExternalLink, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductDetails: React.FC = () => {
@@ -64,6 +63,32 @@ const ProductDetails: React.FC = () => {
       title: "Change image",
       description: "Image change functionality will be implemented.",
     });
+  };
+
+  const handleDownloadQR = async () => {
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `qr-code-${product.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "QR Code downloaded",
+        description: "QR code has been successfully downloaded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to download QR code. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Generate QR code URL (using a QR code service)
@@ -263,7 +288,16 @@ const ProductDetails: React.FC = () => {
                     alt="QR Code" 
                     className="mx-auto mb-2"
                   />
-                  <p className="text-sm text-gray-600">QR Code</p>
+                  <p className="text-sm text-gray-600 mb-2">QR Code</p>
+                  <Button 
+                    onClick={handleDownloadQR}
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download QR Code
+                  </Button>
                 </div>
                 
                 <Separator />
