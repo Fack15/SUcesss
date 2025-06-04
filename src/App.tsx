@@ -11,6 +11,7 @@ import ProductList from "./pages/ProductList";
 import ProductForm from "./pages/ProductForm";
 import IngredientList from "./pages/IngredientList";
 import IngredientForm from "./pages/IngredientForm";
+import IngredientDetails from "./pages/IngredientDetails";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <IngredientForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/ingredients/details/:id" 
+        element={
+          <ProtectedRoute>
+            <IngredientDetails />
           </ProtectedRoute>
         } 
       />

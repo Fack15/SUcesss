@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -34,10 +33,7 @@ const IngredientList: React.FC = () => {
   };
 
   const handleDetails = (id: string) => {
-    toast({
-      title: "Details",
-      description: `Viewing details for ingredient ${id}`,
-    });
+    navigate(`/ingredients/details/${id}`);
   };
 
   return (

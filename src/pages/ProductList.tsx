@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,13 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Navigation from '../components/Navigation';
+import ProductPreviewDialog from '../components/ProductPreviewDialog';
 import { mockProducts, Product } from '../data/mockData';
-import { Plus, Search, Download, Upload, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Download, Upload, MoreHorizontal, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductList: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(mockProducts);
   const [searchTerm, setSearchTerm] = useState('');
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -26,11 +28,9 @@ const ProductList: React.FC = () => {
     navigate(`/products/edit/${id}`);
   };
 
-  const handlePreview = (id: string) => {
-    toast({
-      title: "Preview",
-      description: `Previewing product ${id}`,
-    });
+  const handlePreview = (product: Product) => {
+    setPreviewProduct(product);
+    setPreviewOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -148,9 +148,9 @@ const ProductList: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePreview(product.id)}
+                          onClick={() => handlePreview(product)}
                         >
-                          👁️
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -168,8 +168,8 @@ const ProductList: React.FC = () => {
                             <DropdownMenuItem onClick={() => handleDuplicate(product)}>
                               Duplicate
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handlePreview(product.id)}>
-                              Details
+                            <DropdownMenuItem onClick={() => handlePreview(product)}>
+                              Preview
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -182,6 +182,12 @@ const ProductList: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ProductPreviewDialog 
+        product={previewProduct}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
     </div>
   );
 };
