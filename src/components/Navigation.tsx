@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Package } from 'lucide-react';
+import { LogOut, QrCode } from 'lucide-react';
 
 const Navigation: React.FC = () => {
   const { logout, user } = useAuth();
@@ -20,21 +20,21 @@ const Navigation: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/products" className="flex items-center space-x-2">
-              <Package className="h-8 w-8 text-purple-600" />
-              <span className="text-xl font-bold text-gray-900">Elable</span>
+              <QrCode className="h-6 w-6 text-gray-600" />
+              <span className="text-lg font-medium text-gray-900">Open E-Label</span>
             </Link>
           </div>
           
           <div className="flex items-center space-x-8">
             <Link 
               to="/products" 
-              className="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors"
             >
               Products
             </Link>
             <Link 
               to="/ingredients" 
-              className="text-gray-700 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium transition-colors"
             >
               Ingredients
             </Link>
