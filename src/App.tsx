@@ -9,6 +9,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AuthForm from "./pages/AuthForm";
 import ProductList from "./pages/ProductList";
 import ProductForm from "./pages/ProductForm";
+import ProductDetails from "./pages/ProductDetails";
 import IngredientList from "./pages/IngredientList";
 import IngredientForm from "./pages/IngredientForm";
 import IngredientDetails from "./pages/IngredientDetails";
@@ -61,6 +62,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <ProductForm />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/products/details/:id" 
+        element={
+          <ProtectedRoute>
+            <ProductDetails />
           </ProtectedRoute>
         } 
       />

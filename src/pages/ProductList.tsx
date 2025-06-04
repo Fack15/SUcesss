@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import Navigation from '../components/Navigation';
 import ProductPreviewDialog from '../components/ProductPreviewDialog';
 import { mockProducts, Product } from '../data/mockData';
-import { Plus, Search, Download, Upload, MoreHorizontal, Eye } from 'lucide-react';
+import { Plus, Search, Download, Upload, MoreHorizontal, Eye, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductList: React.FC = () => {
@@ -26,6 +27,10 @@ const ProductList: React.FC = () => {
 
   const handleEdit = (id: string) => {
     navigate(`/products/edit/${id}`);
+  };
+
+  const handleDetails = (id: string) => {
+    navigate(`/products/details/${id}`);
   };
 
   const handlePreview = (product: Product) => {
@@ -159,6 +164,10 @@ const ProductList: React.FC = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleDetails(product.id)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Details
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(product.id)}>
                               Edit
                             </DropdownMenuItem>
