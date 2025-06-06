@@ -1,28 +1,65 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 import Navigation from '../components/Navigation';
 import ProductPreviewDialog from '../components/ProductPreviewDialog';
-import { mockProducts, Product } from '../data/mockData';
+import { Product } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 import { Plus, Search, Download, Upload, MoreHorizontal, Eye, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductList: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(mockProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch products from backend
+  const { data: products = [], isLoading, error } = useQuery<Product[]>({
+    queryKey: ['/api/products'],
+    queryFn: () => fetch('/api/products').then(res => res.json()),
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest(`/api/products/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({
+        title: "Product deleted",
+        description: "Product has been successfully deleted.",
+      });
+    },
+  });
+
+  // Duplicate mutation
+  const duplicateMutation = useMutation({
+    mutationFn: (product: Omit<Product, 'id'>) => apiRequest('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(product),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products'] });
+      toast({
+        title: "Product duplicated",
+        description: "Product has been successfully duplicated.",
+      });
+    },
+  });
+
+  const filteredProducts = Array.isArray(products) ? products.filter(product =>
+    product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
 
   const handleEdit = (id: string) => {
     setLocation(`/products/edit/${id}`);
@@ -38,25 +75,17 @@ const ProductList: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    toast({
-      title: "Product deleted",
-      description: "Product has been successfully deleted.",
-    });
+    deleteMutation.mutate(id);
   };
 
   const handleDuplicate = (product: Product) => {
+    const { id, ...productWithoutId } = product;
     const newProduct = {
-      ...product,
-      id: Date.now().toString(),
+      ...productWithoutId,
       name: `${product.name} (Copy)`,
       sku: `${product.sku}-COPY`
     };
-    setProducts([...products, newProduct]);
-    toast({
-      title: "Product duplicated",
-      description: "Product has been successfully duplicated.",
-    });
+    duplicateMutation.mutate(newProduct);
   };
 
   const handleImport = () => {
