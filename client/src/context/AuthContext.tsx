@@ -47,6 +47,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
+        }
         throw new Error(error.message);
       }
 
@@ -67,12 +70,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         options: {
           data: {
             name: name || ''
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth?verified=true`
         }
       });
 
       if (error) {
         throw new Error(error.message);
+      }
+
+      // Don't set session here - user needs to verify email first
+      if (data.user && !data.session) {
+        // User created but email verification required
+        throw new Error('Please check your email and click the verification link to complete registration.');
       }
 
       if (data.session) {
