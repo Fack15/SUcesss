@@ -6,6 +6,8 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   name: text("name"),
+  username: text("username").unique(),
+  password: text("password"),
   created_at: timestamp("created_at").defaultNow(),
   updated_at: timestamp("updated_at").defaultNow(),
 });
@@ -38,9 +40,10 @@ export const ingredients = pgTable("ingredients", {
 });
 
 // User schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  email: true,
-  name: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
 });
 
 export const loginUserSchema = z.object({
