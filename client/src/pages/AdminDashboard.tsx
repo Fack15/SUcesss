@@ -1,14 +1,14 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Grid2X2 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleLogin = () => {
-    navigate('/login');
+    setLocation('/login');
   };
 
   return (

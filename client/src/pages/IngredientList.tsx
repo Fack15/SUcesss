@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 const IngredientList: React.FC = () => {
   const [ingredients, setIngredients] = useState<Ingredient[]>(mockIngredients);
   const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const filteredIngredients = ingredients.filter(ingredient =>
@@ -23,7 +23,7 @@ const IngredientList: React.FC = () => {
   );
 
   const handleEdit = (id: string) => {
-    navigate(`/ingredients/edit/${id}`);
+    setLocation(`/ingredients/edit/${id}`);
   };
 
   const handleDelete = (id: string) => {
@@ -35,7 +35,7 @@ const IngredientList: React.FC = () => {
   };
 
   const handleDetails = (id: string) => {
-    navigate(`/ingredients/details/${id}`);
+    setLocation(`/ingredients/details/${id}`);
   };
 
   const handleDuplicate = (ingredient: Ingredient) => {
@@ -53,7 +53,7 @@ const IngredientList: React.FC = () => {
   };
 
   const handleImport = () => {
-    navigate('/ingredients/import');
+    setLocation('/ingredients/import');
   };
 
   const handleExport = () => {
@@ -92,7 +92,7 @@ const IngredientList: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <div className="flex gap-2">
                 <Button 
-                  onClick={() => navigate('/ingredients/create')}
+                  onClick={() => setLocation('/ingredients/create')}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />

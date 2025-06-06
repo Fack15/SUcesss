@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const IngredientForm: React.FC = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const isEdit = !!id;
   
