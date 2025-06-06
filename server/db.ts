@@ -1,12 +1,17 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from "@shared/schema";
+import dotenv from 'dotenv';
 
-if (!process.env.DATABASE_URL) {
+dotenv.config();
+
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Please provide your Supabase database URL.",
+    "DATABASE_URL must be set. Please provide your Supabase database connection string from your Supabase dashboard."
   );
 }
 
-const client = postgres(process.env.DATABASE_URL);
+const client = postgres(databaseUrl);
 export const db = drizzle(client, { schema });
