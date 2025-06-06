@@ -40,92 +40,134 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+      if (error) {
+        throw new Error(error.message);
+      }
 
-    if (data.session) {
-      localStorage.setItem('supabase.auth.token', data.session.access_token);
+      if (data.session) {
+        localStorage.setItem('supabase.auth.token', data.session.access_token);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
   };
 
   const register = async (email: string, password: string, name?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: name || ''
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || ''
+          }
         }
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
-    });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    if (data.session) {
-      localStorage.setItem('supabase.auth.token', data.session.access_token);
+      if (data.session) {
+        localStorage.setItem('supabase.auth.token', data.session.access_token);
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
     }
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw new Error(error.message);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw new Error(error.message);
+      }
+      localStorage.removeItem('supabase.auth.token');
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
     }
-    localStorage.removeItem('supabase.auth.token');
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    });
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
 
-    if (error) {
-      throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
     }
   };
 
   const isAuthenticated = user !== null && session !== null;
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        const authUser: User = {
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name
-        };
-        setUser(authUser);
-        localStorage.setItem('supabase.auth.token', session.access_token);
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+
+        setSession(session);
+        if (session?.user) {
+          const authUser: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            name: session.user.user_metadata?.name
+          };
+          setUser(authUser);
+          localStorage.setItem('supabase.auth.token', session.access_token);
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        const authUser: User = {
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata?.name
-        };
-        setUser(authUser);
-        localStorage.setItem('supabase.auth.token', session.access_token);
-      } else {
-        setUser(null);
-        localStorage.removeItem('supabase.auth.token');
+      try {
+        setSession(session);
+        if (session?.user) {
+          const authUser: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            name: session.user.user_metadata?.name
+          };
+          setUser(authUser);
+          localStorage.setItem('supabase.auth.token', session.access_token);
+        } else {
+          setUser(null);
+          localStorage.removeItem('supabase.auth.token');
+        }
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth state change error:', error);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
