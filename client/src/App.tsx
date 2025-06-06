@@ -1,4 +1,4 @@
-
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,11 +21,20 @@ const queryClient = new QueryClient();
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
   
+  React.useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      setLocation("/login");
+    }
+  }, [isAuthenticated, loading, setLocation]);
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
   if (!isAuthenticated) {
-    setLocation("/login");
     return null;
   }
   
@@ -34,11 +43,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public Route wrapper (redirect to products if already authenticated)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
   
+  React.useEffect(() => {
+    if (!loading && isAuthenticated) {
+      setLocation("/products");
+    }
+  }, [isAuthenticated, loading, setLocation]);
+  
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+  
   if (isAuthenticated) {
-    setLocation("/products");
     return null;
   }
   
@@ -48,7 +66,16 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 const AppRoutes = () => {
   return (
     <Switch>
-      <Route path="/" component={AdminDashboard} />
+      <Route path="/">
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/auth">
+        <PublicRoute>
+          <AuthForm />
+        </PublicRoute>
+      </Route>
       <Route path="/login">
         <PublicRoute>
           <AuthForm />
