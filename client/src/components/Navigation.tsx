@@ -1,17 +1,17 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'wouter';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut, Package } from 'lucide-react';
 
 const Navigation: React.FC = () => {
   const { logout, user } = useAuth();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    setLocation('/');
   };
 
   return (

@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Route, Switch, Redirect, useLocation } from "wouter";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import AdminDashboard from "./pages/AdminDashboard";
 import AuthForm from "./pages/AuthForm";
@@ -22,109 +22,98 @@ const queryClient = new QueryClient();
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+  const [, setLocation] = useLocation();
+  
+  if (!isAuthenticated) {
+    setLocation("/login");
+    return null;
+  }
+  
+  return <>{children}</>;
 };
 
 // Public Route wrapper (redirect to products if already authenticated)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/products" replace />;
+  const [, setLocation] = useLocation();
+  
+  if (isAuthenticated) {
+    setLocation("/products");
+    return null;
+  }
+  
+  return <>{children}</>;
 };
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      <Route path="/" element={<AdminDashboard />} />
-      <Route 
-        path="/login" 
-        element={
-          <PublicRoute>
-            <AuthForm />
-          </PublicRoute>
-        } 
-      />
-      <Route 
-        path="/products" 
-        element={
-          <ProtectedRoute>
-            <ProductList />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/products/create" 
-        element={
+    <Switch>
+      <Route path="/" component={AdminDashboard} />
+      <Route path="/login">
+        <PublicRoute>
+          <AuthForm />
+        </PublicRoute>
+      </Route>
+      <Route path="/products">
+        <ProtectedRoute>
+          <ProductList />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/products/create">
+        <ProtectedRoute>
+          <ProductForm />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/products/edit/:id">
+        {params => (
           <ProtectedRoute>
             <ProductForm />
           </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/products/edit/:id" 
-        element={
-          <ProtectedRoute>
-            <ProductForm />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/products/details/:id" 
-        element={
+        )}
+      </Route>
+      <Route path="/products/details/:id">
+        {params => (
           <ProtectedRoute>
             <ProductDetails />
           </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/products/import" 
-        element={
-          <ProtectedRoute>
-            <ProductImport />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ingredients" 
-        element={
-          <ProtectedRoute>
-            <IngredientList />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ingredients/create" 
-        element={
+        )}
+      </Route>
+      <Route path="/products/import">
+        <ProtectedRoute>
+          <ProductImport />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ingredients">
+        <ProtectedRoute>
+          <IngredientList />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ingredients/create">
+        <ProtectedRoute>
+          <IngredientForm />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/ingredients/edit/:id">
+        {params => (
           <ProtectedRoute>
             <IngredientForm />
           </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ingredients/edit/:id" 
-        element={
-          <ProtectedRoute>
-            <IngredientForm />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ingredients/details/:id" 
-        element={
+        )}
+      </Route>
+      <Route path="/ingredients/details/:id">
+        {params => (
           <ProtectedRoute>
             <IngredientDetails />
           </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ingredients/import" 
-        element={
-          <ProtectedRoute>
-            <IngredientImport />
-          </ProtectedRoute>
-        } 
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        )}
+      </Route>
+      <Route path="/ingredients/import">
+        <ProtectedRoute>
+          <IngredientImport />
+        </ProtectedRoute>
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 };
 
@@ -134,9 +123,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <AppRoutes />
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
