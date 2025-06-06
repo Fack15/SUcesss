@@ -70,7 +70,7 @@ const IngredientForm: React.FC = () => {
       description: `Ingredient ${formData.name} has been successfully ${isEdit ? 'updated' : 'created'}.`,
     });
     
-    navigate('/ingredients');
+    setLocation('/ingredients');
   };
 
   return (
@@ -174,7 +174,7 @@ const IngredientForm: React.FC = () => {
                 <Button type="submit" className="bg-green-600 hover:bg-green-700">
                   {isEdit ? 'Update Ingredient' : 'Save Ingredient'}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => navigate('/ingredients')}>
+                <Button type="button" variant="outline" onClick={() => setLocation('/ingredients')}>
                   Cancel
                 </Button>
               </div>

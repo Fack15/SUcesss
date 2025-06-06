@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Navigation from '../components/Navigation';
@@ -9,7 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 
 const IngredientDetails: React.FC = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   
   const ingredient = mockIngredients.find(i => i.id === id);
 
@@ -22,7 +22,7 @@ const IngredientDetails: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">Ingredient Not Found</h1>
             <p className="text-gray-600 mt-2">The ingredient you're looking for doesn't exist.</p>
             <Button 
-              onClick={() => navigate('/ingredients')}
+              onClick={() => setLocation('/ingredients')}
               className="mt-4"
             >
               Back to Ingredients
