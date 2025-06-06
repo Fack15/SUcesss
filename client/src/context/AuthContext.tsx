@@ -1,18 +1,23 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../config/supabase';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
   email: string;
-  name: string;
+  name?: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  register: (email: string, password: string, name?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,44 +36,111 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const login = async (email: string, password: string) => {
-    // Mock authentication - replace with actual API call
-    console.log('Login attempt:', { email, password });
-    const mockUser = {
-      id: '1',
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      name: email.split('@')[0]
-    };
-    setUser(mockUser);
+      password
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data.session) {
+      localStorage.setItem('supabase.auth.token', data.session.access_token);
+    }
   };
 
-  const register = async (email: string, password: string) => {
-    // Mock registration - replace with actual API call
-    console.log('Register attempt:', { email, password });
-    const mockUser = {
-      id: '1',
+  const register = async (email: string, password: string, name?: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
-      name: email.split('@')[0]
-    };
-    setUser(mockUser);
+      password,
+      options: {
+        data: {
+          name: name || ''
+        }
+      }
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (data.session) {
+      localStorage.setItem('supabase.auth.token', data.session.access_token);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
+    localStorage.removeItem('supabase.auth.token');
   };
 
-  const value = {
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  const isAuthenticated = user !== null && session !== null;
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        const authUser: User = {
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name
+        };
+        setUser(authUser);
+        localStorage.setItem('supabase.auth.token', session.access_token);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        const authUser: User = {
+          id: session.user.id,
+          email: session.user.email!,
+          name: session.user.user_metadata?.name
+        };
+        setUser(authUser);
+        localStorage.setItem('supabase.auth.token', session.access_token);
+      } else {
+        setUser(null);
+        localStorage.removeItem('supabase.auth.token');
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value: AuthContextType = {
     user,
+    session,
     login,
     register,
     logout,
-    isAuthenticated: !!user
+    resetPassword,
+    isAuthenticated,
+    loading,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
