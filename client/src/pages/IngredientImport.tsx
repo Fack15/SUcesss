@@ -59,7 +59,7 @@ const IngredientImport: React.FC = () => {
           description: `Successfully imported ${jsonData.length} ingredients`,
         });
         
-        navigate('/ingredients');
+        setLocation('/ingredients');
       };
       reader.readAsArrayBuffer(file);
     } catch (error) {
@@ -81,7 +81,7 @@ const IngredientImport: React.FC = () => {
         <div className="mb-8">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/ingredients')}
+            onClick={() => setLocation('/ingredients')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

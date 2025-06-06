@@ -41,7 +41,7 @@ const IngredientDetails: React.FC = () => {
         <div className="mb-8">
           <Button
             variant="outline"
-            onClick={() => navigate('/ingredients')}
+            onClick={() => setLocation('/ingredients')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />

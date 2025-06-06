@@ -59,7 +59,7 @@ const ProductImport: React.FC = () => {
           description: `Successfully imported ${jsonData.length} products`,
         });
         
-        navigate('/products');
+        setLocation('/products');
       };
       reader.readAsArrayBuffer(file);
     } catch (error) {
@@ -81,7 +81,7 @@ const ProductImport: React.FC = () => {
         <div className="mb-8">
           <Button 
             variant="outline" 
-            onClick={() => navigate('/products')}
+            onClick={() => setLocation('/products')}
             className="mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
